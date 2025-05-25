@@ -1,0 +1,20 @@
+✅ 1. Python
+Versi minimal: Python 3.7 atau lebih baru.
+
+Pastikan pip aktif.
+
+✅ 2. Library Python yang dibutuhkan
+Install dengan perintah berikut:
+
+pip install flask qrcode pillow pyzbar opencv-python
+
+Penjelasan masing-masing:
+Library	Fungsi
+| Paket            | Fungsi                                                                 |
+|------------------|------------------------------------------------------------------------|
+| `flask`          | Web framework untuk membuat web lokal.                                 |
+| `qrcode`         | Untuk membuat QR code dari string QRIS.                                |
+| `pillow`         | Untuk menyimpan dan manipulasi gambar QR.                              |
+| `pyzbar`         | Untuk membaca isi QR code dari gambar (decode).                        |
+| `opencv-python`  | Alternatif/pendukung pembacaan gambar jika `pyzbar` butuh backend.     |
+
