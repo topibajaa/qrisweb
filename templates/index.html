@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QRIS Generator Dinamis</title>
+</head>
+<body>
+    <h2>QRIS Dinamis Generator</h2>
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
+    <form method="post" enctype="multipart/form-data">
+        <label>Masukkan string QRIS statis:</label><br>
+        <textarea name="qris_string" rows="4" cols="60"></textarea><br><br>
+
+        <label>Atau upload gambar QR statis:</label><br>
+        <input type="file" name="qris_image"><br><br>
+
+        <label>Nominal utama (Rp):</label><br>
+        <input type="number" name="nominal"><br><br>
+
+        <label>Biaya layanan tambahan (Rp):</label><br>
+        <input type="number" name="biaya" value="0"><br><br>
+
+        <button type="submit">Generate</button>
+    </form>
+
+    {% if result %}
+        <h3>QRIS Dinamis:</h3>
+        <textarea rows="4" cols="60">{{ result }}</textarea><br><br>
+        <img src="{{ filename }}" width="250"><br>
+        <a href="/download">Download Gambar QR</a>
+    {% endif %}
+</body>
+</html>
