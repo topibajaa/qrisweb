@@ -17,7 +17,7 @@ OpenCV &
 qrcode
 HTML + CSS (template sederhana)
 
-## 🚀 Instalasi & Menjalankan
+## Instalasi & Menjalankan
 1. Clone Repo
 ```
 git clone https://github.com/username/qris-generator-web.git
