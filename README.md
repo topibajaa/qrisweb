@@ -13,11 +13,11 @@ Menampilkan QR code hasil beserta teks dan detail
 Mendukung berbagai format gambar: .png, .jpg, .jpeg
 
 ## Teknologi yang Digunakan
-Python 3
-Flask
-OpenCV & 
-qrcode
-HTML + CSS (template sederhana)
+Python 3,
+Flask,
+OpenCV,
+qrcode,
+HTML + CSS (template sederhana),
 
 ## Instalasi & Menjalankan
 1. Clone Repo
