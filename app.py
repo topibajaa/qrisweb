@@ -1,13 +1,12 @@
-from flask import Flask, render_template, request, send_file
-import qrcode
-from PIL import Image
-from pyzbar.pyzbar import decode
-import io
+from flask import Flask, render_template, request
 import os
+import cv2
+import qrcode
+from pyzbar.pyzbar import decode
+from PIL import Image
 
 app = Flask(__name__)
-UPLOAD_FOLDER = 'static'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['UPLOAD_FOLDER'] = 'uploads'
 
 def crc16_ccitt(data: str):
     crc = 0xFFFF
@@ -21,64 +20,76 @@ def crc16_ccitt(data: str):
             crc &= 0xFFFF
     return format(crc, '04X')
 
-def generate_qris(base_qris, nominal, biaya=0):
-    total_nominal = nominal + biaya
-    nominal_str = f"{total_nominal:06d}"
-    nominal_tag = f"5406{nominal_str}"
+# Fungsi untuk decode QR dari gambar
+def decode_qr_image(image_path):
+    img = cv2.imread(image_path)
+    decoded_objects = decode(img)
+    for obj in decoded_objects:
+        return obj.data.decode("utf-8")
+    return None
+
+# Fungsi membuat QR dinamis dari QRIS statis
+def generate_qris_dinamis(base_qris, nominal, biaya, jenis_biaya):
+    try:
+        nominal = int(nominal)
+        biaya = float(biaya)
+    except ValueError:
+        return None, None, "Nominal atau biaya tidak valid."
+
+    # Hitung total nominal
+    if jenis_biaya == "persen":
+        biaya_rp = round(nominal * (biaya / 100))
+    else:
+        biaya_rp = int(biaya)
+
+    total = nominal + biaya_rp
+    total_str = f"{total:06d}"
+    nominal_tag = f"5406{total_str}"
+
+    # Sisipkan tag 54 sebelum tag 58
     pos_58 = base_qris.find("5802")
     if pos_58 == -1:
-        return None
+        return None, None, "Tag 5802 tidak ditemukan dalam QRIS statis."
+
     raw_data = base_qris[:pos_58] + nominal_tag + base_qris[pos_58:]
+
+    # Tambahkan tag 63 (CRC) kosong dulu
     raw_data_no_crc = raw_data + "6304"
     crc = crc16_ccitt(raw_data_no_crc)
-    return raw_data_no_crc + crc
+    final_qris = raw_data_no_crc + crc
 
-def decode_qr_image(image_path):
-    image = Image.open(image_path)
-    decoded = decode(image)
-    if decoded:
-        return decoded[0].data.decode()
-    return ""
+    # Buat gambar QR
+    qr_img_path = os.path.join("static", "qr_generated.png")
+    img = qrcode.make(final_qris)
+    img.save(qr_img_path)
 
-@app.route("/", methods=["GET", "POST"])
+    return final_qris, qr_img_path, None
+
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    result_text = None
-    filename = None
+    if request.method == 'POST':
+        uploaded_file = request.files['qris_image']
+        nominal = request.form['amount']
+        fee = request.form['fee']
+        fee_type = request.form['fee_type']
 
-    if request.method == "POST":
-        qris_statis = request.form.get("qris_string", "").strip()
-        nominal = int(request.form.get("nominal", "0"))
-        biaya = int(request.form.get("biaya", "0"))
+        if uploaded_file.filename != '':
+            path = os.path.join(app.config['UPLOAD_FOLDER'], uploaded_file.filename)
+            uploaded_file.save(path)
 
-        if 'qris_image' in request.files:
-            file = request.files['qris_image']
-            if file.filename:
-                image_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-                file.save(image_path)
-                decoded = decode_qr_image(image_path)
-                if decoded:
-                    qris_statis = decoded
+            base_qris = decode_qr_image(path)
+            if not base_qris:
+                return "QR Code tidak bisa dibaca."
 
-        if not qris_statis:
-            return render_template("index.html", error="QRIS statis tidak ditemukan.")
+            final_qris, qr_img_path, error = generate_qris_dinamis(base_qris, nominal, fee, fee_type)
+            if error:
+                return error
 
-        final_qris = generate_qris(qris_statis, nominal, biaya)
-        if not final_qris:
-            return render_template("index.html", error="Format QRIS statis tidak valid.")
+            return render_template('index.html', base_qr=base_qris, dynamic_qr=final_qris, qr_img=qr_img_path)
 
-        # Buat QR code
-        qr = qrcode.make(final_qris)
-        filename = os.path.join(UPLOAD_FOLDER, "qris.png")
-        qr.save(filename)
+    return render_template('index.html')
 
-        result_text = final_qris
-
-    return render_template("index.html", result=result_text, filename=filename)
-
-@app.route("/download")
-def download():
-    path = os.path.join(app.config['UPLOAD_FOLDER'], "qris.png")
-    return send_file(path, as_attachment=True)
-
-if __name__ == "__main__":
+if __name__ == '__main__':
+    os.makedirs('uploads', exist_ok=True)
+    os.makedirs('static', exist_ok=True)
     app.run(debug=True)
