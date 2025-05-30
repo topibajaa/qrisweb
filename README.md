@@ -1,6 +1,6 @@
 
 ----
-**📦 QRIS Dinamis Generator (Web Version)
+>**📦 QRIS Dinamis Generator (Web Version)
 Alat berbasis web untuk mengubah QRIS statis (gambar atau teks) menjadi QRIS dinamis dengan nominal dan biaya layanan yang dapat disesuaikan.**
 
 
